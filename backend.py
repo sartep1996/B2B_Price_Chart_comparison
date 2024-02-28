@@ -32,3 +32,14 @@ def find_matching_addresses(file_paths, output_file, threshold_balance=10000):
         consolidated_df.to_excel(writer, sheet_name='Sheet1', index=False, header=True)
 
     return output_file_path
+
+def configure_columns_layout(file_path):
+    df = pd.read_csv(file_path, nrows=5,encoding='latin-1')  
+    rows = [[sg.Text(f"Sample data from {file_path}:")],
+            [sg.Table(values=df.values.tolist(), headings=df.columns.tolist(),
+                      auto_size_columns=True, justification='right')],
+            [sg.Text("Select the column for Wallet Address:"), sg.InputCombo(values=df.columns.tolist(), key='ADDRESS_COLUMN')],
+            [sg.Text("Select the column for Price:"), sg.InputCombo(values=df.columns.tolist(), key='PRICE_COLUMN')],
+            [sg.Text('Select Abbreviation:'), sg.InputText(default_text="PVZ", key="ABBREVIATION")],
+            [sg.Button("OK")]]
+    return sg.Window("Configure Columns", rows, finalize=True)
