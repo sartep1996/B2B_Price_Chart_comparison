@@ -13,6 +13,8 @@ sg.theme('DefaultNoMoreNagging')
 
 window = sg.Window("B2B Price Table Comparison", main_layout)
 selected_files = []
+file_variables = {}
+
 
 while True:
     event, values = window.read()
@@ -27,14 +29,14 @@ while True:
     
     elif event == 'Browse For File':
         file_paths = sg.PopupGetFile("Select File")
-
+        
         if file_paths:
-            file_paths = file_paths.split(';')
 
+            file_paths = file_paths.split(';')
 
             for file_path in file_paths:
             
-                if file_paths:
+                if file_path:
                     config_window = configure_columns_layout(file_path)
 
                     while True:
@@ -42,11 +44,16 @@ while True:
                         
                         if config_event == sg.WINDOW_CLOSED or config_event == 'OK':
                                 break
+                        
+                        
+                    address_column = config_values['ADDRESS_COLUMN']
+                    price_column = config_values['PRICE_COLUMN']
+                    abbreviation = config_values['ABBREVIATION']
 
-                        address_column = config_window.values.get('ADDRESS_COLUMN', default=1)
-                        price_column = config_window.values.get('PRICE_COLUMN', default=2)
-                        abbreviation = config_window.values.get('ABBREVIATION')
+        
+                    file_variables[file_path] = {'address_column': address_column, 'price_column': price_column, 'abbreviation': abbreviation}
                 
+            print(file_variables)
         
         selected_files.extend(file_paths)
         file_paths = [path.strip() for path in selected_files if path.strip()]
@@ -66,10 +73,14 @@ while True:
     elif event == "Compare and Save":
         try:
             threshold_balance = float(values["THRESHOLD"])
-            output_file_path = find_matching_addresses(file_paths, output_location, threshold_balance)
-            window["OUTPUT_PATH"].update(f"Matching addresses saved to {output_file_path}", visible=True)
+            for file_path, variables in file_variables.items():
+                output_file_path = find_matching_addresses([file_path], output_location, threshold_balance, variables['address_column'], variables['price_column'], variables['abbreviation'])
+                window["OUTPUT_PATH"].update(f"Matching addresses saved to {output_file_path}", visible=True)
+            sg.popup('Success!')
         except Exception as e:
             sg.popup_error(f"Error: {str(e)}")
+            print(f"Error: {str(e)}")
+            print(type(threshold_balance))
 
 window.close()
 
