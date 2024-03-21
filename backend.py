@@ -1,25 +1,35 @@
 import pandas as pd
 import PySimpleGUI as sg
 from datetime import datetime
+import os
 
 
 
-def find_matching_addresses(file_paths, output_file, threshold_balance, address_column, price_column, abbreviation):
-    dfs = [pd.read_csv(file_path, header=None, skiprows=1, skipfooter=1, engine='python') for file_path in file_paths]
+def find_matching_addresses(file_variables, output_file, threshold_balance):
 
 
-    addresses_sets = [set(df.iloc[:, address_column].astype(str)) for df in dfs]
+    file_paths = list(file_variables.keys())
+    address_columns = [file_path_value['address_column'] for file_path_value in file_variables.values()]
+    price_columns = [file_path_value['price_column'] for file_path_value in file_variables.values()]
+    abbreviations = [file_path_value['abbreviation'] for file_path_value in file_variables.values()]
+
+
+    dfs = [pd.read_csv(file_path[0], header=None, skiprows=1, skipfooter=1, engine='python') for file_path in file_paths]
+
+
+    addresses_sets = [set(df.iloc[:, address_col].astype(str)) for df, address_col in zip(dfs, address_columns)]
+
     common_addresses = set.intersection(*addresses_sets)
 
-    column_names = ["Address"] + [f"Balance_{abbreviation}"]
+    column_names = ["Address"] + [f"Balance_{abbreviation}" for abbreviation in abbreviations]
     consolidated_df = pd.DataFrame(columns=column_names)
 
     for address in common_addresses:
         balances = []
-        for df in dfs:
-            address_mask = df.iloc[:, address_column].astype(str) == address
-            if address_mask.any():  # Check if there are any matches
-                balance = df.loc[address_mask, price_column].str.replace(',', '').astype(float).values
+        for df, address_col, price_col in zip(dfs, address_columns, price_columns):
+            address_mask = df.iloc[:, address_col].astype(str) == address
+            if address_mask.any():  
+                balance = df.loc[address_mask, price_col].str.replace(',', '').astype(float).values
                 if len(balance) > 0: 
                     balances.append(balance[0])
                 else:
@@ -33,7 +43,10 @@ def find_matching_addresses(file_paths, output_file, threshold_balance, address_
 
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_file_path = f'{output_file}\\Crypto_Files_{timestamp}.xlsx'
+    output_file = output_file.strip()
+    output_file_path = os.path.join(output_file, f'Crypto_Files_{timestamp}.xlsx')
+    print("Output file path:", output_file_path)  # Add this line for debugging
+
 
     with pd.ExcelWriter(output_file_path, engine='xlsxwriter') as writer:
         consolidated_df.to_excel(writer, sheet_name='Sheet1', index=False, header=True)

@@ -29,7 +29,7 @@ while True:
     
     elif event == 'Browse For File':
         file_paths = sg.PopupGetFile("Select File")
-        
+
         if file_paths:
 
             file_paths = file_paths.split(';')
@@ -65,17 +65,18 @@ while True:
     elif event == "OUTPUT LOCATION":
         output_location = values['OUTPUT LOCATION']
         window['SELECTED_OUTPUT_LOCATION'].update(output_location)
+        print(output_location)
     elif event == "DELETE_FILES":
         selected_files_to_delete = values["SELECTED_FILES"]
         selected_files = [file for file in selected_files if file not in selected_files_to_delete]
         window["SELECTED_FILES"].update(values=selected_files)
 
     elif event == "Compare and Save":
+        print(output_location)
         try:
             threshold_balance = float(values["THRESHOLD"])
-            for file_path, variables in file_variables.items():
-                output_file_path = find_matching_addresses([file_path], output_location, threshold_balance, variables['address_column'], variables['price_column'], variables['abbreviation'])
-                window["OUTPUT_PATH"].update(f"Matching addresses saved to {output_file_path}", visible=True)
+            output_file_path = find_matching_addresses(file_variables, output_location, threshold_balance)
+            window["OUTPUT_PATH"].update(f"Matching addresses saved to {output_file_path}", visible=True)
             sg.popup('Success!')
         except Exception as e:
             sg.popup_error(f"Error: {str(e)}")
